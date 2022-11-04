@@ -1,0 +1,22 @@
+[package]
+name = "line_approximator"
+version = "0.1.2"
+edition = "2021"
+license = "MIT"
+description = "Crate aims to find line thicknesses such that an image is well approximated"
+keywords = ["2d","graphic"] 
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[toolchain]
+channel = "nightly"
+
+[dependencies]
+num = "0.4.0"
+image = "0.24.4"
+itertools = "0.10.5"
+
+
+[dev-dependencies]
+imageproc = "0.23.0"

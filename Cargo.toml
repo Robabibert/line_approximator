@@ -16,7 +16,8 @@ channel = "nightly"
 num = "0.4.0"
 image = "0.24.4"
 itertools = "0.10.5"
-
+num-traits = "0.2.15"
 
 [dev-dependencies]
 imageproc = "0.23.0"
+htree = "0.1.3"

@@ -23,8 +23,8 @@ where
     let length = length(start, stop);
 
     // number of steps to sample line (num) and thickness (num_perp)
-    let num = <u32 as NumCast>::from(length).unwrap().min(1);
-    let num_perp = <u32 as NumCast>::from(max_thickness).unwrap().min(1);
+    let num = <u32 as NumCast>::from(length).unwrap().max(1);
+    let num_perp = <u32 as NumCast>::from(max_thickness).unwrap().max(1);
     let num_perp_half = T::from(num_perp).unwrap() * T::from(0.5).unwrap();
 
     // stepping size in direction of line (delta) and perpendicular to line (delta_perp)

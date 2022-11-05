@@ -8,32 +8,22 @@ use line_approximator::{
 
 #[test]
 fn approximate_image() {
-    let target_image:ImageBuffer<Luma<u8>, Vec<u8>> = image::open("resources/rust_logo.png").unwrap().to_luma8();
+    let target_image:ImageBuffer<Luma<u8>, Vec<u8>> = image::open("resources/hawaii.jpg").unwrap().to_luma8();
+    
     let mut approximated_image: ImageBuffer<Luma<u8>, Vec<u8>> = ImageBuffer::new(target_image.width(), target_image.height());
     // white background
     approximated_image.fill(255u8);
 
-    let (width, height) = (target_image.width() as f32, target_image.height() as f32);
-    let htree: HTree<f32> = HTree::new(10);
+    
+    let max_thickness = 20f32;
+    let lines:Vec<((f32,f32),(f32,f32))>=(0..target_image.height()).step_by(max_thickness as usize).into_iter().map(|y|{
+        let start=(0f32,y as f32);
+        let stop=(target_image.width() as f32,y as f32);
+        (start,stop)
+    }).collect();
+    
+    
 
-    //width, height of original_htree : [1,1/sqrt(2)]
-    //scale htree to image size
-    let lines: Vec<((f32, f32), (f32, f32))> = htree
-        .into_iter()
-        .map(|(start, stop)| {
-            (
-                (start.0 * width, start.1 * height * 2f32.sqrt()),
-                (stop.0 * width, stop.1 * height * 2f32.sqrt()),
-            )
-        })
-        .collect();
-    let total_line_length = lines
-        .iter()
-        .map(|(start, stop)| length(start, stop))
-        .sum::<f32>();
-
-    //approximate maximum thickness
-    let max_thickness = width * height / total_line_length;
     let black = Luma([0u8]);
     for line in lines
         .iter()

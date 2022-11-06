@@ -90,44 +90,97 @@ where
 }
 
 /// Function emulates a line with thickness with multiple lines with thickness 1
-pub fn thicken_line_sin<T>(start: &(T, T), stop: &(T, T), thickness: T,periods:Option<usize>) -> Vec<((T, T), (T, T))>
+pub fn thicken_line_sin<T>(
+    start: &(T, T),
+    stop: &(T, T),
+    thickness: T,
+    periods: Option<usize>,
+) -> Vec<((T, T), (T, T))>
 where
     T: Float + Euclid,
 {
     let length = length(start, stop);
-    let periods=match periods {
-        Some(periods)=>T::from(periods).unwrap(),
-        None=>length.ceil()
+    let periods = match periods {
+        Some(periods) => T::from(periods).unwrap(),
+        None => length.ceil(),
     };
 
     if length == T::from(0).unwrap() {
         return Vec::new();
     }
     let direction = ((start.0 - stop.0) / length, (start.1 - stop.1) / length);
-    let num=periods*T::from(10).unwrap();
-    
-    let omega=T::from(2f64*PI).unwrap()*periods;
-    let a=thickness/T::from(2).unwrap();
-    (0..<u32 as NumCast>::from(num).unwrap()).into_iter().map(|i|(i,i+1))
-    .map(|(i,j)|{
-        (T::from(i).unwrap()/num,T::from(j).unwrap()/num)
-    }).map(|(t,t_next)|{
+    let num = periods * T::from(10).unwrap();
 
-        let start=(start.0+t*direction.0,start.1+t*direction.1);
-        let start=(
-            start.0-direction.1*(t*omega).sin()*a,
-            start.1+direction.0*(t*omega).sin()*a
-        );
-        let stop=(start.0+t_next*direction.0,start.1+t_next*direction.1);
-        let stop=(
-            stop.0-direction.1*(t_next*omega).sin()*a,
-            stop.1+direction.0*(t_next*omega).sin()*a
-        );
-        (start,stop)
-    }).collect()
+    let omega = T::from(2f64 * PI).unwrap() * periods;
+    let a = thickness / T::from(2).unwrap();
+    (0..<u32 as NumCast>::from(num).unwrap())
+        .into_iter()
+        .map(|i| (i, i + 1))
+        .map(|(i, j)| (T::from(i).unwrap() / num, T::from(j).unwrap() / num))
+        .map(|(t, t_next)| {
+            let start = (start.0 + t * direction.0, start.1 + t * direction.1);
+            let start = (
+                start.0 - direction.1 * (t * omega).sin() * a,
+                start.1 + direction.0 * (t * omega).sin() * a,
+            );
+            let stop = (
+                start.0 + t_next * direction.0,
+                start.1 + t_next * direction.1,
+            );
+            let stop = (
+                stop.0 - direction.1 * (t_next * omega).sin() * a,
+                stop.1 + direction.0 * (t_next * omega).sin() * a,
+            );
+            (start, stop)
+        })
+        .collect()
 }
 
+/// Function emulates a line with thickness with multiple lines with thickness 1
+pub fn thicken_lines_sin<T>(
+    lines: &Vec<((T, T), (T, T))>,
+    thicknesses: &Vec<T>,
+    omega: T,
+) -> Vec<((T, T), (T, T))>
+where
+    T: Float + Euclid + std::ops::AddAssign,
+{
+    //omega:
+    let mut total_length = T::from(0).unwrap();
+    lines
+        .iter()
+        .zip(
+            thicknesses
+                .iter()
+                .map(|thickness| *thickness / T::from(2).unwrap()),
+        )
+        .map(|((start, stop), thickness)| {
+            let segment_length = length(start, stop);
+            let direction = (
+                (start.0 - stop.0) / segment_length,
+                (start.1 - stop.1) / segment_length,
+            );
+            let num= 2.max(<u32 as NumCast>::from(segment_length).unwrap());
+            let points:Vec<(T,T)> = (0..num)
+                .into_iter()
+                .map(|i| {
+                    let s = T::from(i).unwrap() / T::from(num-1).unwrap();// s in [0,1]
+                    let t = total_length + s*segment_length;
+                    let sin_offset = (
+                        -direction.1 * thickness * (t * omega).sin(),
+                        direction.0 * thickness * (t * omega).sin(),
+                    );
+                    let point = (start.0 + s * direction.0, start.1 + s * direction.1);
+                    (point.0 + sin_offset.0, point.1 + sin_offset.1)
+                })
+                .collect();
 
+            total_length += segment_length;
+            points.iter().zip(points.iter().skip(1)).map(|(start,stop)|(*start,*stop)).collect::<Vec<((T,T),(T,T))>>()
+        })
+        .flatten()
+        .collect()
+}
 
 /// Function emulates a line with thickness with multiple lines with thickness 1
 pub fn thicken_line<T>(start: &(T, T), stop: &(T, T), thickness: T) -> Vec<((T, T), (T, T))>

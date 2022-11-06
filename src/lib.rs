@@ -1,7 +1,7 @@
 
 pub mod line_utils;
 mod image_utils;
-
+pub mod hilbert_curve;
 use image::{ImageBuffer, Luma};
 use itertools::iproduct;
 use crate::line_utils::{length,partition_line};

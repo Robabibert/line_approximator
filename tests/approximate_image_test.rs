@@ -1,7 +1,7 @@
 use htree::HTree;
 use image::{self, ImageBuffer, Luma, DynamicImage};
 use imageproc::{drawing::{draw_line_segment_mut, draw_filled_rect_mut, draw_antialiased_line_segment}, rect::Rect};
-use line_approximator::{
+use line_approximator_lib::{
     approximate,
     line_utils::{length, partition_line, thicken_line},
 };

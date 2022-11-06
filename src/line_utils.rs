@@ -3,6 +3,89 @@ use itertools::iproduct;
 use num::{traits::Euclid, Float};
 use num_traits::NumCast;
 
+pub trait Length<T>
+where
+    T: Float + Euclid + std::iter::Sum,
+{
+    fn get_total_length(&self) -> T;
+}
+
+impl<T> Length<T> for Vec<((T, T), (T, T))>
+where
+    T: Float + Euclid + std::iter::Sum,
+{
+    fn get_total_length(&self) -> T {
+        let two = T::from(2).unwrap();
+        self.iter()
+            .map(|(start, stop)| {
+                ((start.0 - stop.0).powf(two) + (start.1 - stop.1).powf(two)).sqrt()
+            })
+            .sum::<T>()
+    }
+}
+
+pub fn set_scale<T>(lines: &mut Vec<((T, T), (T, T))>, width: usize, height: usize)
+where
+    T: Float + Euclid,
+{
+    let min_x = lines
+        .iter()
+        .map(|(start, stop)| vec![start.0, stop.0])
+        .flatten()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let max_x = lines
+        .iter()
+        .map(|(start, stop)| vec![start.0, stop.0])
+        .flatten()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let min_y = lines
+        .iter()
+        .map(|(start, stop)| vec![start.1, stop.1])
+        .flatten()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let max_y = lines
+        .iter()
+        .map(|(start, stop)| vec![start.1, stop.1])
+        .flatten()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+
+    let width = T::from(width).unwrap();
+    let height = T::from(height).unwrap();
+    for (start, stop) in lines.iter_mut() {
+        start.0 = (start.0 - min_x) * width / (max_x - min_x);
+        stop.0 = (stop.0 - min_x) * width / (max_x - min_x);
+        start.1 = (start.1 - min_y) * height / (max_y - min_y);
+        stop.1 = (stop.1 - min_y) * height / (max_y - min_y);
+    }
+}
+
+pub fn crop_to_scale<T>(lines: &mut Vec<((T, T), (T, T))>, width: usize, height: usize)
+where
+    T: Float + Euclid,
+{
+    set_scale(lines, width.max(height), width.max(height));
+    let width = T::from(width).unwrap();
+    let height = T::from(height).unwrap();
+    lines.retain(|(start, stop)| {
+        if start.0 > width {
+            return false;
+        }
+        if stop.0 > width {
+            return false;
+        }
+        if start.1 > height {
+            return false;
+        }
+        if stop.1 > height {
+            return false;
+        }
+        true
+    });
+}
 /// Function emulates a line with thickness with multiple lines with thickness 1
 pub fn thicken_line<T>(start: &(T, T), stop: &(T, T), thickness: T) -> Vec<((T, T), (T, T))>
 where

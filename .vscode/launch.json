@@ -1,0 +1,85 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'line_approximator_lib'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=line_approximator"
+                ],
+                "filter": {
+                    "name": "line_approximator_lib",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'line_approximator'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=line_approximator",
+                    "--package=line_approximator"
+                ],
+                "filter": {
+                    "name": "line_approximator",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "resources/hawaii.jpg",
+                "8",
+                "resources/approximated.png"
+
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'line_approximator'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=line_approximator",
+                    "--package=line_approximator"
+                ],
+                "filter": {
+                    "name": "line_approximator",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'approximate_image_test'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=approximate_image_test",
+                    "--package=line_approximator"
+                ],
+                "filter": {
+                    "name": "approximate_image_test",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

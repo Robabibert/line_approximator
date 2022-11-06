@@ -149,11 +149,7 @@ where
     let mut total_length = T::from(0).unwrap();
     lines
         .iter()
-        .zip(
-            thicknesses
-                .iter()
-                .map(|thickness| *thickness / T::from(2).unwrap()),
-        )
+        .zip(thicknesses)
         .map(|((start, stop), thickness)| {
             let segment_length = length(start, stop);
             let direction = (
@@ -167,8 +163,8 @@ where
                     let s = T::from(i).unwrap() / T::from(num-1).unwrap();// s in [0,1]
                     let t = total_length + s*segment_length;
                     let sin_offset = (
-                        -direction.1 * thickness * (t * omega).sin(),
-                        direction.0 * thickness * (t * omega).sin(),
+                        -direction.1 * (*thickness) * (t * omega).sin(),
+                        direction.0 * (*thickness) * (t * omega).sin(),
                     );
                     let point = (start.0 + s * direction.0, start.1 + s * direction.1);
                     (point.0 + sin_offset.0, point.1 + sin_offset.1)

@@ -1,6 +1,8 @@
+use std::f64::consts::PI;
+
 use image::{ImageBuffer, Luma};
 use itertools::iproduct;
-use num::{traits::Euclid, Float};
+use num::{traits::Euclid, Float, Num};
 use num_traits::NumCast;
 
 pub trait Length<T>
@@ -86,6 +88,47 @@ where
         true
     });
 }
+
+/// Function emulates a line with thickness with multiple lines with thickness 1
+pub fn thicken_line_sin<T>(start: &(T, T), stop: &(T, T), thickness: T,periods:Option<usize>) -> Vec<((T, T), (T, T))>
+where
+    T: Float + Euclid,
+{
+    let length = length(start, stop);
+    let periods=match periods {
+        Some(periods)=>T::from(periods).unwrap(),
+        None=>length.ceil()
+    };
+
+    if length == T::from(0).unwrap() {
+        return Vec::new();
+    }
+    let direction = ((start.0 - stop.0) / length, (start.1 - stop.1) / length);
+    let num=periods*T::from(10).unwrap();
+    
+    let omega=T::from(2f64*PI).unwrap()*periods;
+    let a=thickness/T::from(2).unwrap();
+    (0..<u32 as NumCast>::from(num).unwrap()).into_iter().map(|i|(i,i+1))
+    .map(|(i,j)|{
+        (T::from(i).unwrap()/num,T::from(j).unwrap()/num)
+    }).map(|(t,t_next)|{
+
+        let start=(start.0+t*direction.0,start.1+t*direction.1);
+        let start=(
+            start.0-direction.1*(t*omega).sin()*a,
+            start.1+direction.0*(t*omega).sin()*a
+        );
+        let stop=(start.0+t_next*direction.0,start.1+t_next*direction.1);
+        let stop=(
+            stop.0-direction.1*(t_next*omega).sin()*a,
+            stop.1+direction.0*(t_next*omega).sin()*a
+        );
+        (start,stop)
+    }).collect()
+}
+
+
+
 /// Function emulates a line with thickness with multiple lines with thickness 1
 pub fn thicken_line<T>(start: &(T, T), stop: &(T, T), thickness: T) -> Vec<((T, T), (T, T))>
 where

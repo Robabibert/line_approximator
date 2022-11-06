@@ -143,18 +143,27 @@ pub fn thicken_lines_sin<T>(
     omega: T,
 ) -> Vec<((T, T), (T, T))>
 where
-    T: Float + Euclid + std::ops::AddAssign,
+    T: Float + Euclid + std::ops::AddAssign+ std::iter::Sum<T>,
 {
     //omega:
+    let smooth_window=5;
+    let mut directions=Vec::new();
     let mut total_length = T::from(0).unwrap();
     lines
         .iter()
         .zip(thicknesses)
         .map(|((start, stop), thickness)| {
             let segment_length = length(start, stop);
-            let direction = (
+            directions.push((
                 (start.0 - stop.0) / segment_length,
-                (start.1 - stop.1) / segment_length,
+                (start.1 - stop.1) / segment_length)
+            );
+            if directions.len()>smooth_window{
+                directions.remove(0);
+            }
+            let direction = (
+                directions.iter().map(|(x,_)|*x).sum::<T>()/T::from(directions.len()).unwrap(),
+                directions.iter().map(|(_,y)|*y).sum::<T>()/T::from(directions.len()).unwrap(),
             );
             let num= 2.max(<u32 as NumCast>::from(segment_length).unwrap());
             let points:Vec<(T,T)> = (0..num)

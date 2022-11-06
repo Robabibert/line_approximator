@@ -228,6 +228,9 @@ where
         .iter()
         .zip(thicknesses)
         .map(|((start, stop), thickness)| {
+            if *thickness<T::from(1).unwrap(){
+                return Vec::new();
+            }
             let segment_length = length(start, stop);
             let direction = (
                 (start.0 - stop.0) / segment_length,

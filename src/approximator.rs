@@ -8,9 +8,10 @@ pub fn approximate_image(image:&ImageBuffer<Luma<u8>,Vec<u8>>,order:usize,omega:
     let max=*image.iter().max().unwrap();
     for pixel in image.iter_mut(){
         // heighten contrast
-        *pixel=((*pixel-min) as f32/(max-min) as f32) as u8;
+        *pixel=(((*pixel-min) as f32/(max-min) as f32)*255f32) as u8;
     }
-    
+    let new_min=*image.iter().min().unwrap();
+    let new_max=*image.iter().max().unwrap();
     let mut lines: Vec<((f32, f32), (f32, f32))> =
         hilbert_curve::HilbertCurve::new(order)
             .into_iter()

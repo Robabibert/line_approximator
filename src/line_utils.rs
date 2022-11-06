@@ -160,7 +160,7 @@ where
             let points:Vec<(T,T)> = (0..num)
                 .into_iter()
                 .map(|i| {
-                    let s = T::from(i).unwrap() / T::from(num-1).unwrap();// s in [0,1]
+                    let s = T::from(i).unwrap() / T::from(num).unwrap();// s in [0,1]
                     let t = total_length + s*segment_length;
                     let sin_offset = (
                         -direction.1 * (*thickness) * (t * omega).sin(),

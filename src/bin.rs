@@ -33,7 +33,7 @@ pub fn main() {
     approximated_image.fill(255u8);
     let black = Luma([0u8]);
 
-    let lines =approximate_image(&image, args.order as usize);
+    let lines =approximate_image(&image, args.order as usize,1f32);
     for (start, stop) in lines {
         draw_line_segment_mut(&mut approximated_image, start, stop, black)
     }

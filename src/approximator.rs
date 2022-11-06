@@ -1,6 +1,6 @@
 use image::{ImageBuffer, Luma};
 
-use crate::{hilbert_curve, line_utils::{crop_to_scale, Length, partition_line, thicken_line, thicken_line_sin, thicken_lines_sin}, approximate};
+use crate::{hilbert_curve, line_utils::{crop_to_scale, Length, partition_line, thicken_line, thicken_line_sin, thicken_lines_sin,  smooth_corners}, approximate};
 
 pub fn approximate_image(image:&ImageBuffer<Luma<u8>,Vec<u8>>,order:usize,omega:f32)->Vec<((f32, f32), (f32, f32))>{
 
@@ -9,6 +9,7 @@ pub fn approximate_image(image:&ImageBuffer<Luma<u8>,Vec<u8>>,order:usize,omega:
             .into_iter()
             .collect();
     crop_to_scale(&mut lines, image.width() as usize, image.height() as usize);
+    lines=smooth_corners(&lines);
     let total_length = lines.get_total_length();
     let max_thickness = (image.width() * image.height()) as f32 / total_length;
     lines= lines

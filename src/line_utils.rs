@@ -136,6 +136,83 @@ where
         .collect()
 }
 
+fn get_direction<T>(line: &((T, T), (T, T))) -> (T, T)
+where
+    T: Float + Euclid + std::ops::AddAssign + std::iter::Sum<T>,
+{
+    let length = length(&line.0, &line.1);
+    (
+        (line.0 .0 - line.1 .0) / length,
+        (line.0 .1 - line.1 .1) / length,
+    )
+}
+
+fn get_angle<T>(line1: &((T, T), (T, T)), line2: &((T, T), (T, T))) -> T
+where
+    T: Float + Euclid + std::ops::AddAssign + std::iter::Sum<T>,
+{
+    let direction1 = get_direction(line1);
+    let direction2 = get_direction(line2);
+    let angle = (direction1.0 * direction2.0 + direction1.1 * direction2.1).acos();
+    angle
+}
+
+pub fn smooth_corners<T>(lines: &Vec<((T, T), (T, T))>)->Vec<((T, T), (T, T))>
+where
+    T: Float + Euclid + std::ops::AddAssign + std::iter::Sum<T>,
+{
+    let mut lines=lines.clone();
+    let mut resulting_lines:Vec<((T, T),(T, T))>=Vec::new();
+    let mut hit=false;
+    let one=T::from(1).unwrap();
+    let two=T::from(2).unwrap();
+    for i in 0..lines.len() - 1 {
+        let line1 = lines[i];
+        let line2 = lines[i + 1];
+        if line1.1 != line2.0 {
+            continue;
+        }
+        let direction1=get_direction(&line1);
+        let direction2=get_direction(&line2);
+        
+        if direction1.0!=direction2.0 ||direction1.1!=direction2.1{
+            hit=true;
+            let control_point=line1.1;
+            let start:(T,T)=(
+                (line1.0.0+line1.1.0)/two,
+                (line1.0.1+line1.1.1)/two
+            );
+            let stop:(T,T)=(
+                (line2.0.0+line2.1.0)/two,
+                (line2.0.1+line2.1.1)/two
+            );
+            resulting_lines.push((line1.0,start));
+            let num=2.max(<u32 as NumCast>::from(length(&line1.0, &line1.1)+length(&line2.0, &line2.1)).unwrap()/2);
+            for (t,t_next) in (0..num).into_iter().map(|i|(T::from(i).unwrap()/T::from(num).unwrap(),T::from(i+1).unwrap()/T::from(num).unwrap())){
+                resulting_lines.push(
+                    ((
+                        (one-t).powf(two)*start.0 + two*(one-t)*t*control_point.0+t.powf(two)*stop.0,
+                        (one-t).powf(two)*start.1 + two*(one-t)*t*control_point.1+t.powf(two)*stop.1
+                    ),
+                    (
+                        (one-t_next).powf(two)*start.0 + two*(one-t_next)*t_next*control_point.0+t_next.powf(two)*stop.0,
+                        (one-t_next).powf(two)*start.1 + two*(one-t_next)*t_next*control_point.1+t_next.powf(two)*stop.1
+                    ))
+                )
+            }
+            //resulting_lines.push((stop,line2.1));
+            lines[i+1]=(stop,line2.1);
+
+        }else{
+            hit=false;
+            resulting_lines.push(line1);
+        }
+    }
+    if !hit{
+        resulting_lines.push(*lines.iter().last().unwrap());
+    }
+    resulting_lines
+}
 /// Function emulates a line with thickness with multiple lines with thickness 1
 pub fn thicken_lines_sin<T>(
     lines: &Vec<((T, T), (T, T))>,
@@ -143,42 +220,29 @@ pub fn thicken_lines_sin<T>(
     omega: T,
 ) -> Vec<((T, T), (T, T))>
 where
-    T: Float + Euclid + std::ops::AddAssign+ std::iter::Sum<T>,
+    T: Float + Euclid + std::ops::AddAssign + std::iter::Sum<T>,
 {
     //omega:
-    let smooth_window=5;
-    let mut directions=Vec::new();
-    let mut window_thicknesses=Vec::new();
     let mut total_length = T::from(0).unwrap();
     lines
         .iter()
         .zip(thicknesses)
         .map(|((start, stop), thickness)| {
             let segment_length = length(start, stop);
-            directions.push((
-                (start.0 - stop.0) / segment_length,
-                (start.1 - stop.1) / segment_length)
-            );
-            window_thicknesses.push(thickness);
-            if directions.len()>smooth_window{
-                directions.remove(0);
-                window_thicknesses.remove(0);
-            }
             let direction = (
-                directions.iter().map(|(x,_)|*x).sum::<T>()/T::from(directions.len()).unwrap(),
-                directions.iter().map(|(_,y)|*y).sum::<T>()/T::from(directions.len()).unwrap(),
+                (start.0 - stop.0) / segment_length,
+                (start.1 - stop.1) / segment_length,
             );
-            let thickness=window_thicknesses.iter().map(|t|**t).sum::<T>()/T::from(window_thicknesses.len()).unwrap();
-            
-            let num= 2.max(<u32 as NumCast>::from(segment_length).unwrap());
-            let points:Vec<(T,T)> = (0..num)
+
+            let num = 2.max(<u32 as NumCast>::from(segment_length).unwrap());
+            let points: Vec<(T, T)> = (0..num)
                 .into_iter()
                 .map(|i| {
-                    let s = T::from(i).unwrap() / T::from(num).unwrap();// s in [0,1]
-                    let t = total_length + s*segment_length;
+                    let s = T::from(i).unwrap() / T::from(num).unwrap(); // s in [0,1)
+                    let t = total_length + s * segment_length;
                     let sin_offset = (
-                        -direction.1 * thickness * (t * omega).sin(),
-                        direction.0 * thickness * (t * omega).sin(),
+                        -direction.1 * (*thickness) * (t * omega).sin(),
+                        direction.0 * (*thickness) * (t * omega).sin(),
                     );
                     let point = (start.0 + s * direction.0, start.1 + s * direction.1);
                     (point.0 + sin_offset.0, point.1 + sin_offset.1)
@@ -186,7 +250,11 @@ where
                 .collect();
 
             total_length += segment_length;
-            points.iter().zip(points.iter().skip(1)).map(|(start,stop)|(*start,*stop)).collect::<Vec<((T,T),(T,T))>>()
+            points
+                .iter()
+                .zip(points.iter().skip(1))
+                .map(|(start, stop)| (*start, *stop))
+                .collect::<Vec<((T, T), (T, T))>>()
         })
         .flatten()
         .collect()

@@ -218,6 +218,7 @@ pub fn thicken_lines_sin<T>(
     lines: &Vec<((T, T), (T, T))>,
     thicknesses: &Vec<T>,
     omega: T,
+    drop_bright:bool
 ) -> Vec<((T, T), (T, T))>
 where
     T: Float + Euclid + std::ops::AddAssign + std::iter::Sum<T>,
@@ -228,7 +229,7 @@ where
         .iter()
         .zip(thicknesses)
         .map(|((start, stop), thickness)| {
-            if *thickness<T::from(1).unwrap(){
+            if drop_bright && *thickness<T::from(1).unwrap(){
                 return Vec::new();
             }
             let segment_length = length(start, stop);

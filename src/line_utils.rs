@@ -148,6 +148,7 @@ where
     //omega:
     let smooth_window=5;
     let mut directions=Vec::new();
+    let mut window_thicknesses=Vec::new();
     let mut total_length = T::from(0).unwrap();
     lines
         .iter()
@@ -158,13 +159,17 @@ where
                 (start.0 - stop.0) / segment_length,
                 (start.1 - stop.1) / segment_length)
             );
+            window_thicknesses.push(thickness);
             if directions.len()>smooth_window{
                 directions.remove(0);
+                window_thicknesses.remove(0);
             }
             let direction = (
                 directions.iter().map(|(x,_)|*x).sum::<T>()/T::from(directions.len()).unwrap(),
                 directions.iter().map(|(_,y)|*y).sum::<T>()/T::from(directions.len()).unwrap(),
             );
+            let thickness=window_thicknesses.iter().map(|t|**t).sum::<T>()/T::from(window_thicknesses.len()).unwrap();
+            
             let num= 2.max(<u32 as NumCast>::from(segment_length).unwrap());
             let points:Vec<(T,T)> = (0..num)
                 .into_iter()
@@ -172,8 +177,8 @@ where
                     let s = T::from(i).unwrap() / T::from(num).unwrap();// s in [0,1]
                     let t = total_length + s*segment_length;
                     let sin_offset = (
-                        -direction.1 * (*thickness) * (t * omega).sin(),
-                        direction.0 * (*thickness) * (t * omega).sin(),
+                        -direction.1 * thickness * (t * omega).sin(),
+                        direction.0 * thickness * (t * omega).sin(),
                     );
                     let point = (start.0 + s * direction.0, start.1 + s * direction.1);
                     (point.0 + sin_offset.0, point.1 + sin_offset.1)
